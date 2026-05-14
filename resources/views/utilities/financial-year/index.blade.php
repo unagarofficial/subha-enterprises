@@ -27,6 +27,7 @@
                 </tr>
             </thead>
             <tbody>
+                @php $brName = session('br_name'); @endphp
                 @foreach($years as $y)
                 <tr class="{{ $y->is_active ? 'table-success' : '' }}">
                     <td>
@@ -53,7 +54,7 @@
                     <td class="text-center">
                         <form method="POST" action="{{ route('utilities.financial-year.copy-ob', $y->id) }}"
                               class="d-inline"
-                              onsubmit="return confirm('Copy closing stock as opening balance for &quot;{{ $y->year_name }}&quot;? This will reset Receipts & Issues to 0 for branch {{ session(\'br_name\') }}.')">
+                              onsubmit="return confirm('Copy closing stock as opening balance for &quot;{{ $y->year_name }}&quot;? This will reset Receipts & Issues to 0 for branch {{ $brName }}.')">
                             @csrf
                             <button type="submit" class="btn btn-xs btn-info me-1" title="Copy Closing Stock as OB">
                                 <i class="bi bi-arrow-repeat"></i> Copy OB

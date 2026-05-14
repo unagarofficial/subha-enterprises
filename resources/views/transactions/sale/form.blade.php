@@ -441,7 +441,7 @@ $('#party_code').on('change', function () {
         calcTotals();
         return;
     }
-    $.getJSON('{{ route("transactions.sale.getParty", "") }}/' + partyCode, function (data) {
+    $.getJSON('{{ url("transactions/sale/party") }}/' + partyCode, function (data) {
         $('#pi_place').text(data.place || '—');
         $('#pi_state').text(data.state || '—');
         $('#pi_gst').text(data.tin_grn_no || '—');
@@ -462,7 +462,7 @@ $('#loadOrderBtn').on('click', function () {
     const brCode = $('#br_code').val();
     if (!ordNo) { alert('Enter an order number first.'); return; }
 
-    $.getJSON('{{ route("transactions.sale.getOrder", "") }}/' + ordNo + '?br_code=' + brCode, function (data) {
+    $.getJSON('{{ url("transactions/sale/order") }}/' + ordNo + '?br_code=' + brCode, function (data) {
         if (!data.rows || data.rows.length === 0) {
             alert('No items found for Order #' + ordNo);
             return;
