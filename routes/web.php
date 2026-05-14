@@ -16,6 +16,15 @@ use App\Http\Controllers\Transactions\PurchaseReturnController;
 use App\Http\Controllers\Transactions\SaleController;
 use App\Http\Controllers\Transactions\OrderController;
 use App\Http\Controllers\Transactions\SaleReturnController;
+use App\Http\Controllers\Transactions\EstimationController;
+use App\Http\Controllers\Transactions\StockTransferController;
+use App\Http\Controllers\Reports\SalesReportController;
+use App\Http\Controllers\Reports\PurchaseReportController;
+use App\Http\Controllers\Reports\StockReportController;
+use App\Http\Controllers\Reports\LedgerReportController;
+use App\Http\Controllers\Reports\ProductReportController;
+use App\Http\Controllers\Reports\PartyListReportController;
+use App\Http\Controllers\Reports\ParcelReportController;
 use App\Http\Controllers\Utilities\UserController;
 use App\Http\Controllers\Utilities\SysParaController;
 use App\Http\Controllers\Utilities\FinancialYearController;
@@ -152,6 +161,30 @@ Route::middleware(['web', 'auth.check'])->group(function () {
             Route::get  ('{brCode}/{invNo}/print',                [SaleReturnController::class, 'printReturn'])     ->name('print');
         });
 
+        // Estimation Invoice (Prathan)
+        Route::prefix('estimation')->name('estimation.')->group(function () {
+            Route::get ('product/{matCode}',    [EstimationController::class, 'getProduct'])->name('getProduct');
+            Route::get ('',                     [EstimationController::class, 'index'])     ->name('index');
+            Route::get ('create',               [EstimationController::class, 'create'])    ->name('create');
+            Route::post('',                     [EstimationController::class, 'store'])     ->name('store');
+            Route::get ('{brCode}/{invNo}/edit',[EstimationController::class, 'edit'])      ->name('edit');
+            Route::put ('{brCode}/{invNo}',     [EstimationController::class, 'update'])    ->name('update');
+            Route::delete('{brCode}/{invNo}',   [EstimationController::class, 'destroy'])   ->name('destroy');
+            Route::get ('{brCode}/{invNo}/print',[EstimationController::class, 'printInvoice'])->name('print');
+        });
+
+        // Stock Transfer (Branch Issue)
+        Route::prefix('stock-transfer')->name('stock-transfer.')->group(function () {
+            Route::get ('product/{matCode}',  [StockTransferController::class, 'getProduct'])    ->name('getProduct');
+            Route::get ('',                   [StockTransferController::class, 'index'])         ->name('index');
+            Route::get ('create',             [StockTransferController::class, 'create'])        ->name('create');
+            Route::post('',                   [StockTransferController::class, 'store'])         ->name('store');
+            Route::get ('{issNo}/edit',       [StockTransferController::class, 'edit'])          ->name('edit');
+            Route::put ('{issNo}',            [StockTransferController::class, 'update'])        ->name('update');
+            Route::delete('{issNo}',          [StockTransferController::class, 'destroy'])       ->name('destroy');
+            Route::get ('{issNo}/print',      [StockTransferController::class, 'printTransfer']) ->name('print');
+        });
+
         // Purchase Return
         Route::prefix('purchase-return')->name('purchase-return.')->group(function () {
             Route::get  ('supplier-purchases/{partyCode}',  [PurchaseReturnController::class, 'getSupplierPurchases'])->name('supplierPurchases');
@@ -167,8 +200,67 @@ Route::middleware(['web', 'auth.check'])->group(function () {
 
     });
 
-    // ── Reports (future prompts) ──────────────────────────────────────────────
+    // ── Reports ───────────────────────────────────────────────────────────────
     Route::prefix('reports')->name('reports.')->group(function () {
+
+        Route::prefix('sales')->name('sales.')->group(function () {
+            Route::get('daily',           [SalesReportController::class, 'daily'])               ->name('daily');
+            Route::get('daily/export',    [SalesReportController::class, 'dailyExport'])         ->name('daily.export');
+
+            Route::get('party-wise',          [SalesReportController::class, 'partyWise'])       ->name('party-wise');
+            Route::get('party-wise/export',   [SalesReportController::class, 'partyWiseExport']) ->name('party-wise.export');
+
+            Route::get('weekly',          [SalesReportController::class, 'weekly'])              ->name('weekly');
+            Route::get('weekly/export',   [SalesReportController::class, 'weeklyExport'])        ->name('weekly.export');
+
+            Route::get('customer-weekly',        [SalesReportController::class, 'customerWeekly'])       ->name('customer-weekly');
+            Route::get('customer-weekly/export', [SalesReportController::class, 'customerWeeklyExport']) ->name('customer-weekly.export');
+        });
+
+        Route::prefix('purchase')->name('purchase.')->group(function () {
+            Route::get('register',             [PurchaseReportController::class, 'register'])           ->name('register');
+            Route::get('register/export',      [PurchaseReportController::class, 'registerExport'])     ->name('register.export');
+            Route::get('weekly',               [PurchaseReportController::class, 'weekly'])             ->name('weekly');
+            Route::get('weekly/export',        [PurchaseReportController::class, 'weeklyExport'])       ->name('weekly.export');
+            Route::get('returns',              [PurchaseReportController::class, 'returns'])            ->name('returns');
+            Route::get('returns/export',       [PurchaseReportController::class, 'returnsExport'])      ->name('returns.export');
+            Route::get('self-purchase',        [PurchaseReportController::class, 'selfPurchase'])       ->name('self-purchase');
+            Route::get('self-purchase/export', [PurchaseReportController::class, 'selfPurchaseExport']) ->name('self-purchase.export');
+        });
+
+        Route::prefix('stock')->name('stock.')->group(function () {
+            Route::get('current',        [StockReportController::class, 'current'])       ->name('current');
+            Route::get('current/export', [StockReportController::class, 'currentExport']) ->name('current.export');
+            Route::get('closing',        [StockReportController::class, 'closing'])       ->name('closing');
+            Route::get('closing/export', [StockReportController::class, 'closingExport']) ->name('closing.export');
+        });
+
+        // Party Ledger
+        Route::prefix('ledger')->name('ledger.')->group(function () {
+            Route::get('party',        [LedgerReportController::class, 'partyLedger'])       ->name('party');
+            Route::get('party/export', [LedgerReportController::class, 'partyLedgerExport']) ->name('party.export');
+        });
+
+        // Product Reports
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('list',             [ProductReportController::class, 'list'])            ->name('list');
+            Route::get('list/export',      [ProductReportController::class, 'listExport'])      ->name('list.export');
+            Route::get('price-list',       [ProductReportController::class, 'priceList'])       ->name('price-list');
+            Route::get('price-list/export',[ProductReportController::class, 'priceListExport']) ->name('price-list.export');
+        });
+
+        // Party List
+        Route::prefix('parties')->name('parties.')->group(function () {
+            Route::get('list',        [PartyListReportController::class, 'list'])       ->name('list');
+            Route::get('list/export', [PartyListReportController::class, 'listExport']) ->name('list.export');
+        });
+
+        // Parcel List
+        Route::prefix('parcel')->name('parcel.')->group(function () {
+            Route::get('list',        [ParcelReportController::class, 'list'])       ->name('list');
+            Route::get('list/export', [ParcelReportController::class, 'listExport']) ->name('list.export');
+        });
+
     });
 
     // ── Utilities ─────────────────────────────────────────────────────────────

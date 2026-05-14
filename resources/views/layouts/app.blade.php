@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Print CSS -->
+    <link rel="stylesheet" href="{{ asset('css/print.css') }}" media="print">
 
     <style>
         body { font-size: 0.88rem; background-color: #f4f6f9; }
@@ -67,11 +69,42 @@
 
         /* Footer */
         .footer { background: #1a3c5e; color: #8faec8; font-size: 0.75rem; padding: 6px 16px; text-align: center; }
+
+        /* Tables: horizontal scroll on small screens */
+        @media (max-width: 768px) {
+            .table-responsive-sm-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .main-menu { overflow-x: auto; }
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        #loading-overlay .spinner-border { width: 3rem; height: 3rem; border-width: 4px; color: #ffc107; }
+        #loading-overlay .load-text { color: #fff; margin-top: 12px; font-size: 0.9rem; }
     </style>
 
     @stack('styles')
 </head>
 <body>
+
+{{-- ── Loading Overlay ────────────────────────────────────────────────────── --}}
+<div id="loading-overlay">
+    <div class="spinner-border" role="status"></div>
+    <div class="load-text">Please wait…</div>
+</div>
+
+{{-- ── Hidden Auto-logout Form ────────────────────────────────────────────── --}}
+<form id="auto-logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">
+    @csrf
+</form>
 
 {{-- Top Navbar --}}
 <nav class="navbar navbar-dark" style="background:#0d2b47; padding: 5px 16px;">
@@ -145,23 +178,71 @@
                     <li><span class="dropdown-item-text text-muted fw-bold" style="font-size:0.75rem;">ORDERS</span></li>
                     <li><a class="dropdown-item {{ request()->routeIs('transactions.order.*') && request()->route('ordType') == 1 ? 'active' : '' }}" href="{{ route('transactions.order.index', ['ordType' => 1]) }}"><i class="bi bi-clipboard-check me-1"></i>Order (Type 1)</a></li>
                     <li><a class="dropdown-item {{ request()->routeIs('transactions.order.*') && request()->route('ordType') == 2 ? 'active' : '' }}" href="{{ route('transactions.order.index', ['ordType' => 2]) }}"><i class="bi bi-clipboard-check me-1"></i>Order (Type 2)</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-left-right me-1"></i>Stock Transfer</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('transactions.estimation.*') ? 'active' : '' }}" href="{{ route('transactions.estimation.index') }}"><i class="bi bi-file-earmark-text me-1"></i>Estimation Invoice</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><span class="dropdown-item-text text-muted fw-bold" style="font-size:0.75rem;">STOCK</span></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('transactions.stock-transfer.*') ? 'active' : '' }}" href="{{ route('transactions.stock-transfer.index') }}"><i class="bi bi-arrow-left-right me-1"></i>Stock Transfer</a></li>
                 </ul>
             </li>
 
             {{-- Reports --}}
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                <a class="nav-link dropdown-toggle {{ request()->is('reports/*') ? 'active' : '' }}" href="#" data-bs-toggle="dropdown">
                     <i class="bi bi-bar-chart-fill"></i> Reports
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-box me-1"></i>Stock Report</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-cart me-1"></i>Purchase Report</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-receipt me-1"></i>Sales Report</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-return-left me-1"></i>Return Reports</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-clipboard me-1"></i>Order Report</a></li>
+                    <li><span class="dropdown-item-text text-muted fw-bold" style="font-size:0.75rem;">SALES REPORTS</span></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.sales.daily*') ? 'active' : '' }}"
+                           href="{{ route('reports.sales.daily') }}">
+                           <i class="bi bi-calendar-day me-1"></i>Daily Sales</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.sales.party-wise*') ? 'active' : '' }}"
+                           href="{{ route('reports.sales.party-wise') }}">
+                           <i class="bi bi-people me-1"></i>Party-wise Sales</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.sales.weekly') ? 'active' : '' }}"
+                           href="{{ route('reports.sales.weekly') }}">
+                           <i class="bi bi-calendar3-week me-1"></i>Weekly Sales</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.sales.customer-weekly*') ? 'active' : '' }}"
+                           href="{{ route('reports.sales.customer-weekly') }}">
+                           <i class="bi bi-grid-3x3-gap me-1"></i>Customer Weekly</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-people me-1"></i>Party Ledger</a></li>
+                    <li><span class="dropdown-item-text text-muted fw-bold" style="font-size:0.75rem;">PURCHASE REPORTS</span></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.purchase.register*') ? 'active' : '' }}"
+                           href="{{ route('reports.purchase.register') }}">
+                           <i class="bi bi-cart-check me-1"></i>Purchase Register</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.purchase.weekly*') ? 'active' : '' }}"
+                           href="{{ route('reports.purchase.weekly') }}">
+                           <i class="bi bi-calendar3-week me-1"></i>Weekly Purchase</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.purchase.returns*') ? 'active' : '' }}"
+                           href="{{ route('reports.purchase.returns') }}">
+                           <i class="bi bi-arrow-return-left me-1"></i>Purchase Returns</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.purchase.self-purchase*') ? 'active' : '' }}"
+                           href="{{ route('reports.purchase.self-purchase') }}">
+                           <i class="bi bi-person-workspace me-1"></i>Self Purchase</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><span class="dropdown-item-text text-muted fw-bold" style="font-size:0.75rem;">STOCK REPORTS</span></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.stock.current*') ? 'active' : '' }}"
+                           href="{{ route('reports.stock.current') }}">
+                           <i class="bi bi-boxes me-1"></i>Current Stock</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.stock.closing*') ? 'active' : '' }}"
+                           href="{{ route('reports.stock.closing') }}">
+                           <i class="bi bi-archive me-1"></i>Stock Closing</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><span class="dropdown-item-text text-muted fw-bold" style="font-size:0.75rem;">LEDGER & LISTS</span></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.ledger.party*') ? 'active' : '' }}"
+                           href="{{ route('reports.ledger.party') }}">
+                           <i class="bi bi-journal-text me-1"></i>Party Ledger</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.products.list*') ? 'active' : '' }}"
+                           href="{{ route('reports.products.list') }}">
+                           <i class="bi bi-box-seam me-1"></i>Product List</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.products.price-list*') ? 'active' : '' }}"
+                           href="{{ route('reports.products.price-list') }}">
+                           <i class="bi bi-tag me-1"></i>Price List</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.parties.list*') ? 'active' : '' }}"
+                           href="{{ route('reports.parties.list') }}">
+                           <i class="bi bi-people me-1"></i>Party List</a></li>
+                    <li><a class="dropdown-item {{ request()->routeIs('reports.parcel.list*') ? 'active' : '' }}"
+                           href="{{ route('reports.parcel.list') }}">
+                           <i class="bi bi-box me-1"></i>Parcel List</a></li>
                 </ul>
             </li>
 
@@ -188,14 +269,20 @@
 {{-- Flash Messages --}}
 <div class="content-wrapper">
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <div class="alert alert-success alert-dismissible fade show mb-3 flash-alert" role="alert">
             <i class="bi bi-check-circle-fill me-1"></i>{{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show mb-3 flash-alert" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('warning'))
+        <div class="alert alert-warning alert-dismissible fade show mb-3 flash-alert" role="alert">
+            <i class="bi bi-exclamation-circle-fill me-1"></i>{{ session('warning') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -211,6 +298,118 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<script>
+(function () {
+    // ── 1. Flash message auto-dismiss (3 seconds) ────────────────────────────
+    document.querySelectorAll('.flash-alert').forEach(function (el) {
+        setTimeout(function () {
+            var bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+            if (bsAlert) bsAlert.close();
+        }, 3000);
+    });
+
+    // ── 2. Loading spinner on form submit ────────────────────────────────────
+    var overlay = document.getElementById('loading-overlay');
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (form.method && form.method.toUpperCase() === 'GET') return;
+        if (form.dataset.noSpinner) return;
+        if (form.id === 'auto-logout-form') return;
+        overlay.style.display = 'flex';
+    });
+
+    // ── 3. SweetAlert2 delete confirmations ─────────────────────────────────
+    // Intercepts any form with onsubmit containing confirm()
+    document.querySelectorAll('form[onsubmit*="confirm("]').forEach(function (form) {
+        var raw     = form.getAttribute('onsubmit') || '';
+        var match   = raw.match(/confirm\(['"](.+?)['"]\)/);
+        var message = match ? match[1] : 'Are you sure you want to delete this record?';
+        form.removeAttribute('onsubmit');
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Confirm Delete',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Delete',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    overlay.style.display = 'flex';
+                    form.submit();
+                }
+            });
+        });
+    });
+
+    // ── 4. Auto-logout after 60 minutes of inactivity ────────────────────────
+    var IDLE_TIMEOUT = 60 * 60 * 1000;
+    var idleTimer;
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(function () {
+            document.getElementById('auto-logout-form').submit();
+        }, IDLE_TIMEOUT);
+    }
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (evt) {
+        document.addEventListener(evt, resetIdleTimer, { passive: true });
+    });
+    resetIdleTimer();
+
+    // ── 5. Keyboard shortcuts ─────────────────────────────────────────────────
+    document.addEventListener('keydown', function (e) {
+
+        // F2 = submit the current/first form
+        if (e.key === 'F2') {
+            e.preventDefault();
+            var btn = document.querySelector(
+                'form button[type="submit"]:not([disabled]), form input[type="submit"]:not([disabled])'
+            );
+            if (btn) btn.click();
+            return;
+        }
+
+        // Escape = close open Bootstrap modal
+        if (e.key === 'Escape') {
+            var openModal = document.querySelector('.modal.show');
+            if (openModal) {
+                var inst = bootstrap.Modal.getInstance(openModal);
+                if (inst) inst.hide();
+            }
+            return;
+        }
+
+        // Enter = move to next focusable field (text/number/date inputs only)
+        if (e.key === 'Enter') {
+            var t = e.target;
+            var allowed = ['text', 'number', 'date', 'email', 'tel', 'password', 'search'];
+            if (!allowed.includes(t.type)) return;
+            // Don't intercept if inside a Select2 search box
+            if (t.closest('.select2-container')) return;
+            e.preventDefault();
+            var focusable = Array.from(document.querySelectorAll(
+                'input:not([disabled]):not([readonly]):not([type="hidden"]),' +
+                'select:not([disabled]):not([readonly]),' +
+                'textarea:not([disabled]):not([readonly]),' +
+                'button[type="submit"]:not([disabled])'
+            )).filter(function (el) { return el.offsetParent !== null; });
+            var idx = focusable.indexOf(t);
+            if (idx >= 0 && idx < focusable.length - 1) {
+                focusable[idx + 1].focus();
+            }
+        }
+    });
+
+})();
+</script>
 
 @stack('scripts')
 </body>
