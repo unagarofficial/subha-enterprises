@@ -29,7 +29,7 @@ class DashboardController extends Controller
             ->selectRaw('COALESCE(SUM(nett), 0) as total, COUNT(*) as cnt')
             ->first();
 
-        $lowStockCount = DB::table('stocks')
+        $lowStockCount = DB::table('stock')
             ->where('br_code', $brCode)
             ->where('cl_stock', '<=', 10)
             ->count();
